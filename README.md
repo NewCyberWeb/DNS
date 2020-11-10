@@ -3,6 +3,12 @@ New Cyber Web (NCW) - DNS Project.
 This repo is part of a series of repo's that form my NCW project, the goal of this project is to recreate the base elements the internet is based on.
 Only for learning and entertainment (mostly myself) purposes.
 
+## Project structure
+This repo consists of three Visual Studio projects.\
+One of these projects is the actual DNS Server, for now this is an executable that can receive the DNS requests. This could eventually change into a Windows service.\
+The other project is the DNS Library, this can be used to make DNS requests, or create your own implementation of this special DNS Protocol.\
+The third project is for testing the DNS server and can be used to perform multiple query's in the starting arguments.
+
 ## Technical information
 Written below is information on how this DNS server is going to function.
 
