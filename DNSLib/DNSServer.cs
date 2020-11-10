@@ -28,9 +28,7 @@ namespace DNSLib
             EndPoint EndPoint = new IPEndPoint(IPAddress.Any, 51);
             Server.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.PacketInformation, true);
             Server.Bind(EndPoint);
-            //Server.BeginAccept(new AsyncCallback(AcceptConnection), Server);
-            //Server.Listen(0);
-            Processor.LoadDomainNameTable();
+            Processor.LoadDomainNameTable(); //do database stuff.
             Server.BeginReceiveFrom(Data, 0, 1024, SocketFlags.None, ref Sender, new AsyncCallback(Request), null);
         }
 
@@ -41,6 +39,7 @@ namespace DNSLib
                 int bytesReceived = Server.EndReceiveFrom(result, ref Sender);
                 Console.WriteLine($"Received {bytesReceived} bytes from {((IPEndPoint)Sender).Address}, string version of data: '{Encoding.Default.GetString(Data).Replace("\0", "")}'.");
 
+                //check if this request is a dns request, if not, absorb this message and continue
                 if(Processor.IsDNSRequest(Data))
                 DNSRequestHandler(Sender, Data);
 
@@ -58,8 +57,9 @@ namespace DNSLib
 
         private bool DNSRequestHandler(EndPoint endpoint, byte[] Data)
         {
-            //take out the headers, and send it into the processor.
+            //take out the headers, decide where to send it into the processor.
 
+            //after processing, send a response.
             return true;
         }
 

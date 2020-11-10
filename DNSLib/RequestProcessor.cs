@@ -15,7 +15,7 @@ namespace DNSLib
 
         public void LoadDomainNameTable()
         {
-
+            //get the DNS records from a database and put them into a dictionary, start a seperate thread to keep updating this.
         }
 
         public bool IsDNSRequest(byte[] Data)
