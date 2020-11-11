@@ -41,10 +41,13 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DNSClient.cs" />
-    <Compile Include="DNSServer.cs" />
+    <Compile Include="Client\DNSClient.cs" />
+    <Compile Include="DNSPacket.cs" />
+    <Compile Include="Extensions.cs" />
+    <Compile Include="Server\DNSRecord.cs" />
+    <Compile Include="Server\DNSServer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RequestProcessor.cs" />
+    <Compile Include="Server\RequestProcessor.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

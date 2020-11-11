@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DNSLib.Server;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -6,9 +7,9 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DNSLib
+namespace DNSLib.Client
 {
-    public class DNSClient
+    public sealed class DNSClient
     {
         public DNSClient()
         {

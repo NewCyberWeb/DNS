@@ -1,4 +1,4 @@
-﻿using DNSLib;
+﻿using DNSLib.Server;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,6 +14,7 @@ namespace DNS_Server
             DNSServer s = new DNSServer();
             s.Start();
             Console.ReadLine();
+
         }
     }
 }
