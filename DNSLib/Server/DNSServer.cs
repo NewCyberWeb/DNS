@@ -42,13 +42,13 @@ namespace DNSLib.Server
 
                 //check if this request is a dns request, if not, absorb this message and continue
                 if (Processor.IsDNSRequest(Data))
-                    Console.WriteLine(DNSRequestHandler(Sender, Data) ? "Responded" : "Ignored");
+                    Console.WriteLine(DNSRequestHandler(Sender, Data) ? "Responded" : "Problem with request, ignored");
 
                 Server.BeginReceiveFrom(Data, 0, 258, SocketFlags.None, ref Sender, new AsyncCallback(Request), null);
             }
             catch (SocketException sEx)
             {
-                Console.WriteLine("SocketException: {0} | {1}", sEx.Message, ((IPEndPoint)Sender).Address);
+                Console.WriteLine("SocketException: '{0}' for {1}", sEx.Message, ((IPEndPoint)Sender).Address);
             }
             catch (Exception ex)
             {
@@ -62,22 +62,67 @@ namespace DNSLib.Server
             if (Processor.IsDNSRequest(Data))
             {
                 DNSPacket packet = DNSPacket.RawToPacket(Data);
-                string lookupData = Encoding.ASCII.GetString(packet.Data);
-                switch (packet.Lookup)
+                if (packet.Type == DNSPacket.PacketType.Request)
                 {
-                    case DNSPacket.LookupType.Name:
-                        return SendResponse(endpoint, Processor.LookupByName(lookupData.Split('.')));
-                    case DNSPacket.LookupType.IP:
-                        return SendResponse(endpoint, Processor.LookupByIp(lookupData));
+                    string lookupData = Encoding.ASCII.GetString(packet.Data).Replace("\0", "");
+                    switch (packet.Lookup)
+                    {
+                        case DNSPacket.LookupType.Name:
+                            return SendResponse(endpoint, packet.Lookup, Processor.LookupByName(lookupData.Split('.').Reverse().ToArray()));
+                        case DNSPacket.LookupType.IP:
+                            return SendResponse(endpoint, packet.Lookup, Processor.LookupByIp(lookupData));
+                    }
                 }
             }
 
             return false;
         }
 
-        private bool SendResponse(EndPoint endpoint, DNSRecord record)
+        private bool SendResponse(EndPoint endpoint, DNSPacket.LookupType type, DNSRecord record)
         {
-            return true;
+            DNSPacket packet = new DNSPacket
+            {
+                Type = DNSPacket.PacketType.Response,
+                Lookup = type,
+                Data = Encoding.ASCII.GetBytes(record.Address)
+            };
+
+            packet.Length = packet.Data.Length;
+            byte[] sendBuffer = DNSPacket.PacketToRaw(packet);
+
+            try
+            {
+                Server.BeginSendTo(sendBuffer, 0, sendBuffer.Length, SocketFlags.None, endpoint, new AsyncCallback(ResponseCompleted), endpoint);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error sending async response: " + ex.Message);
+                return false;
+            }
+        }
+
+        private void ResponseCompleted(IAsyncResult result)
+        {
+            try
+            {
+                EndPoint ep = (EndPoint)result.AsyncState;
+                int bytesSend = Server.EndSendTo(result);
+
+                if (bytesSend > 0)
+                {
+                    Console.WriteLine($"Sent a response to {((IPEndPoint)ep).Address} on port {((IPEndPoint)ep).Port}.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error ending async response: " + ex.Message);
+            }
+        }
+
+        public void GenerateFileStructure()
+        {
+            Processor.CreateDNSStructureFile();
         }
     }
 }

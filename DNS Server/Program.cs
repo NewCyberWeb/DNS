@@ -14,7 +14,6 @@ namespace DNS_Server
             DNSServer s = new DNSServer();
             s.Start();
             Console.ReadLine();
-
         }
     }
 }
