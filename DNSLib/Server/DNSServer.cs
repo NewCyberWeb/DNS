@@ -15,6 +15,10 @@ namespace DNSLib.Server
         private readonly byte[] Data;
         private readonly RequestProcessor Processor;
 
+        public delegate void LoggingHandler(string message);
+        public event LoggingHandler VerboseLog;
+        public event LoggingHandler ErrorLog;
+
         public DNSServer()
         {
             Server = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
@@ -31,28 +35,34 @@ namespace DNSLib.Server
             Server.Bind(EndPoint);
             Processor.LoadDomainNameTable(); //do database stuff.
             Server.BeginReceiveFrom(Data, 0, 258, SocketFlags.None, ref Sender, new AsyncCallback(Request), null);
+            VerboseLog?.Invoke("Server has started listening for DNS requests.");
+        }
+
+        public void Stop()
+        {
+            Server.Close();            
         }
 
         private void Request(IAsyncResult result)
         {
             try
             {
-                int bytesReceived = Server.EndReceiveFrom(result, ref Sender);
-                Console.WriteLine($"Received {bytesReceived} bytes from {((IPEndPoint)Sender).Address}, string version of data: '{Encoding.Default.GetString(Data).Replace("\0", "")}'.");
-
-                //check if this request is a dns request, if not, absorb this message and continue
-                if (Processor.IsDNSRequest(Data))
-                    Console.WriteLine(DNSRequestHandler(Sender, Data) ? "Responded" : "Problem with request, ignored");
-
+                Server.EndReceiveFrom(result, ref Sender);
+                bool success = DNSRequestHandler(Sender, Data);
+                VerboseLog?.Invoke($"Received data from {((IPEndPoint)Sender).Address}:{((IPEndPoint)Sender).Port}. Response success: {success}.");
                 Server.BeginReceiveFrom(Data, 0, 258, SocketFlags.None, ref Sender, new AsyncCallback(Request), null);
             }
             catch (SocketException sEx)
             {
-                Console.WriteLine("SocketException: '{0}' for {1}", sEx.Message, ((IPEndPoint)Sender).Address);
+                ErrorLog?.Invoke($"SocketException: '{sEx.Message}' for {((IPEndPoint)Sender).Address}.");
+            }
+            catch (DNSException dEx)
+            {
+                ErrorLog?.Invoke($"DNS Exception: '{dEx.Message}' for {((IPEndPoint)Sender).Address}.");
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Unexpected Exception: {0}", ex.Message);
+                ErrorLog?.Invoke($"Unexpected Exception: '{ex.Message}'.");
             }
         }
 
@@ -64,7 +74,7 @@ namespace DNSLib.Server
                 DNSPacket packet = DNSPacket.RawToPacket(Data);
                 if (packet.Type == DNSPacket.PacketType.Request)
                 {
-                    string lookupData = Encoding.ASCII.GetString(packet.Data).Replace("\0", "");
+                    string lookupData = Encoding.ASCII.GetString(packet.Data, 0, packet.Length);
                     switch (packet.Lookup)
                     {
                         case DNSPacket.LookupType.Name:
@@ -73,6 +83,10 @@ namespace DNSLib.Server
                             return SendResponse(endpoint, packet.Lookup, Processor.LookupByIp(lookupData));
                     }
                 }
+                else
+                {
+                    throw new DNSException(packet, "Received a Response package while expecting only Request packages.");
+                }
             }
 
             return false;
@@ -80,6 +94,9 @@ namespace DNSLib.Server
 
         private bool SendResponse(EndPoint endpoint, DNSPacket.LookupType type, DNSRecord record)
         {
+            if (record == null)
+                return false;
+
             DNSPacket packet = new DNSPacket
             {
                 Type = DNSPacket.PacketType.Response,
@@ -97,7 +114,7 @@ namespace DNSLib.Server
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error sending async response: " + ex.Message);
+                ErrorLog?.Invoke($"Error sending async response: '{ex.Message}'.");
                 return false;
             }
         }
@@ -111,12 +128,12 @@ namespace DNSLib.Server
 
                 if (bytesSend > 0)
                 {
-                    Console.WriteLine($"Sent a response to {((IPEndPoint)ep).Address} on port {((IPEndPoint)ep).Port}.");
+                    VerboseLog?.Invoke($"Sent a response to {((IPEndPoint)ep).Address}:{((IPEndPoint)ep).Port}.");
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error ending async response: " + ex.Message);
+                ErrorLog?.Invoke($"Error ending async response: '{ex.Message}'.");
             }
         }
 

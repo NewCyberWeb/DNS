@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace DNSLib
 {
-    internal class DNSPacket
+    public sealed class DNSPacket
     {
         public enum PacketType
         {
