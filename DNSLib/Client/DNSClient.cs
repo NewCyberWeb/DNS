@@ -13,12 +13,16 @@ namespace DNSLib.Client
     {
         private UdpClient Client;
         private readonly string Address;
+
         public DNSClient(string address)
         {           
             Client = new UdpClient();
             Address = address;
         }
 
+        /// <summary>
+        /// Starts the connection with the DNS Server.
+        /// </summary>
         private void Connect()
         {
             IPEndPoint ipep = new IPEndPoint(IPAddress.Parse(Address), 51);
@@ -26,11 +30,19 @@ namespace DNSLib.Client
             Client.Connect(ipep);
         }
 
+        /// <summary>
+        /// Stops the connection with the DNS server.
+        /// </summary>
         private void Disconnect()
         {
             Client.Close();
         }
 
+        /// <summary>
+        /// Connects with the provided DNS Server and retrieves the IP Address by looking up the given Domain name.
+        /// </summary>
+        /// <param name="DomainName">The domain name to lookup</param>
+        /// <returns></returns>
         public string RetrieveIpAddress(string DomainName)
         {
             Connect();
@@ -69,13 +81,18 @@ namespace DNSLib.Client
             return responseData;
         }
 
+        /// <summary>
+        /// Connects with the provided DNS Server and retrieves the DNS name by looking up the given IP.
+        /// </summary>
+        /// <param name="ipadd">the ip address you want a DNS name for.</param>
+        /// <returns></returns>
         public string RetrieveDNSName(string ipadd)
         {
             Connect();
             DNSPacket packet = new DNSPacket
             {
                 Type = DNSPacket.PacketType.Request,
-                Lookup = DNSPacket.LookupType.IP,
+                Lookup = DNSPacket.LookupType.ARPA,
                 Data = Encoding.ASCII.GetBytes(ipadd)
             };
 
@@ -93,7 +110,7 @@ namespace DNSLib.Client
             {
                 //checks if the response came from the DNS server
                 DNSPacket response = DNSPacket.RawToPacket(answer);
-                if (response.Type == DNSPacket.PacketType.Response && response.Lookup == DNSPacket.LookupType.IP)
+                if (response.Type == DNSPacket.PacketType.Response && response.Lookup == DNSPacket.LookupType.ARPA)
                 {
                     responseData = Encoding.ASCII.GetString(response.Data, 0, response.Length);
                 }

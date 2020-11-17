@@ -16,7 +16,7 @@ namespace DNS_Server
             s.ErrorLog += ErrorLog;
             s.Start();
             for (string command; (command = CommandlineHelper.ParseCommand()) != CommandlineHelper.COMMAND_EXIT;)
-                CommandlineHelper.Execute(command);
+                CommandlineHelper.Execute(s, command);
             s.Stop();
         }
 

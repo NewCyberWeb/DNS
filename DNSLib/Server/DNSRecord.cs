@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace DNSLib.Server
 {
-    internal sealed class DNSRecord
+    public sealed class DNSRecord
     {
         public string Domain { get; set; }
         public string Address { get; set; }
@@ -17,7 +17,10 @@ namespace DNSLib.Server
             SubDomains = new List<DNSRecord>();
         }
 
-        //Checks if the current domain has sub records.
+        /// <summary>
+        /// Checks if the current domain has sub records.
+        /// </summary>
+        /// <returns></returns>
         public bool HasSubDomains()
         {
             return SubDomains.Count != 0;
@@ -31,6 +34,17 @@ namespace DNSLib.Server
         public DNSRecord GetSubRecord(string key)
         {
             return SubDomains.FirstOrDefault(n => n.Domain == key);
+        }
+
+        /// <summary>
+        /// Creates a human readable version of the DNSRecord
+        /// </summary>
+        /// <returns></returns>
+        public override string ToString()
+        {
+            string subDomains = string.Join(",\r\n", this.SubDomains.Select(n => n.Domain));
+
+            return $"DNS Record \r\nDomain Name: {this.Domain}\r\nIp Address: {this.Address}\r\nAmount of subdomains: {subDomains}";
         }
     }
 }
